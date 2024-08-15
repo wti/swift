@@ -2392,8 +2392,7 @@ static CanSILFunctionType getSILFunctionType(
       coroutineKind = SILCoroutineKind::YieldOnce;
     }
     
-    // Coroutine accessors are always native, so fetch the native
-    // abstraction pattern.
+    // Coroutines are always native, so fetch the native abstraction pattern.
     auto sig = origFd->getGenericSignatureOfContext()
       .getCanonicalSignature();
     auto origYieldType = origFd->getYieldsInterfaceType()->castTo<YieldResultType>();
