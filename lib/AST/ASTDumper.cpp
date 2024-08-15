@@ -1705,6 +1705,7 @@ namespace {
     void printCommonFD(FuncDecl *FD, const char *type, StringRef Label) {
       printCommonAFD(FD, type, Label);
       printFlag(FD->isStatic(), "type");
+      printFlag(FD->isCoroutine(), "@yield_once");
     }
 
     void visitFuncDecl(FuncDecl *FD, StringRef label) {
