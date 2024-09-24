@@ -3709,6 +3709,7 @@ mapSignatureExtInfo(AnyFunctionType::ExtInfo info,
       .withAsync(info.isAsync())
       .withThrows(info.isThrowing(), info.getThrownError())
       .withClangFunctionType(info.getClangTypeInfo().getType())
+      .withCoroutine(info.isCoroutine())
       .build();
 }
 
