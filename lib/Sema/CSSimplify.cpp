@@ -7211,8 +7211,25 @@ ConstraintSystem::matchTypes(Type type1, Type type2, ConstraintKind kind,
 
     case TypeKind::Error:
     case TypeKind::Unresolved:
-    case TypeKind::YieldResult:
       return getTypeMatchFailure(locator);
+
+    case TypeKind::YieldResult: {
+      if (simplifyType(desugar1)->isEqual(simplifyType(desugar2)))
+        return getTypeMatchSuccess();
+
+      if (kind != ConstraintKind::Bind)
+        return getTypeMatchFailure(locator);
+
+      auto *yield1 = cast<YieldResultType>(desugar1);
+      auto *yield2 = cast<YieldResultType>(desugar2);
+
+      if (yield1->isInOut() != yield2->isInOut())
+        return getTypeMatchFailure(locator);
+
+      return matchTypes(yield1->getResultType(), yield2->getResultType(),
+                        ConstraintKind::Bind, subflags,
+                  locator.withPathElement(ConstraintLocator::LValueConversion));
+    }
 
     case TypeKind::Placeholder: {
       // If it's allowed to attempt fixes, let's delegate
@@ -8213,7 +8230,6 @@ ConstraintSystem::simplifyConstructionConstraint(
   case TypeKind::Unresolved:
   case TypeKind::Error:
   case TypeKind::Placeholder:
-  case TypeKind::YieldResult:
     return SolutionKind::Error;
 
   case TypeKind::GenericFunction:
@@ -8313,6 +8329,7 @@ ConstraintSystem::simplifyConstructionConstraint(
   case TypeKind::Function:
   case TypeKind::LValue:
   case TypeKind::InOut:
+  case TypeKind::YieldResult:
   case TypeKind::Module:
   case TypeKind::Pack:
   case TypeKind::PackExpansion:

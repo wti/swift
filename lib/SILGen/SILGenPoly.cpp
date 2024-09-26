@@ -5541,6 +5541,9 @@ static ManagedValue createThunk(SILGenFunction &SGF,
   assert(expectedType->getLanguage() ==
          fn.getType().castTo<SILFunctionType>()->getLanguage() &&
          "bridging in re-abstraction thunk?");
+  // We cannot reabstract coroutines (yet)
+  assert(!expectedType->isCoroutine() && !sourceType->isCoroutine() &&
+         "cannot reabstract a coroutine");
 
   // Declare the thunk.
   SubstitutionMap interfaceSubs;
@@ -5554,6 +5557,7 @@ static ManagedValue createThunk(SILGenFunction &SGF,
                                       genericEnv,
                                       interfaceSubs,
                                       dynamicSelfType);
+
   // An actor-isolated non-async function can be converted to an async function
   // by inserting a hop to the global actor.
   CanType globalActorForThunk;
@@ -6849,9 +6853,9 @@ SILGenFunction::emitVTableThunk(SILDeclRef base,
     }
 
     // End the inner coroutine normally.
-    emitEndApplyWithRethrow(loc, token, allocation);
+    result = emitEndApplyWithRethrow(loc, token, allocation,
+                                     SILType::getEmptyTupleType(getASTContext()));
 
-    result = B.createTuple(loc, {});
     break;
   }
 
@@ -7241,9 +7245,8 @@ void SILGenFunction::emitProtocolWitness(
     }
 
     // End the inner coroutine normally.
-    emitEndApplyWithRethrow(loc, token, allocation);
-
-    reqtResultValue = B.createTuple(loc, {});
+    reqtResultValue = emitEndApplyWithRethrow(loc, token, allocation,
+                                              SILType::getEmptyTupleType(getASTContext()));
     break;
   }
 
