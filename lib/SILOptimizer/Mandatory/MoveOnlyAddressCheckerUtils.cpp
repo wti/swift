@@ -3337,6 +3337,16 @@ void MoveOnlyAddressCheckerPImpl::rewriteUses(
   /// Whether the marked value appeared in a discard statement.
   const bool isDiscardingContext = !addressUseState.dropDeinitInsts.empty();
 
+  bool isCxxValueType = false;
+  if (const auto *sai = dyn_cast<AllocStackInst>(markedValue->getOperand())) {
+    if (const auto *structDecl = sai->getElementType()
+                                     .getASTType()
+                                     ->getStructOrBoundGenericStruct()) {
+      if (structDecl->hasClangNode())
+        isCxxValueType = true;
+    }
+  }
+
   // Process destroys
   for (auto destroyPair : addressUseState.destroys) {
     /// Is this destroy instruction a final consuming use?
@@ -3344,21 +3354,21 @@ void MoveOnlyAddressCheckerPImpl::rewriteUses(
     destroyPair.second.setBits(bits);
     bool isFinalConsume = consumes.claimConsume(destroyPair.first, bits);
 
+    if (isCxxValueType)
+      continue;
+
     // Remove destroys that are not the final consuming use.
-    // TODO: for C++ types we do not want to remove destroys as the caller is
-    //       still responsible for invoking the dtor for the moved-from object.
-    //       See GH Issue #77894.
     if (!isFinalConsume) {
       destroyPair.first->eraseFromParent();
       continue;
     }
 
-    // Otherwise, if we're in a discarding context, flag this final destroy_addr
-    // as a point where we're missing an explicit `consume self`. The reasoning
-    // here is that if a destroy of self is the final consuming use,
-    // then these are the points where we implicitly destroy self to clean-up
-    // that self var before exiting the scope. An explicit 'consume self'
-    // that is thrown away is a consume of this
+    // Otherwise, if we're in a discarding context, flag this final
+    // destroy_addr as a point where we're missing an explicit `consume self`.
+    // The reasoning here is that if a destroy of self is the final consuming
+    // use, then these are the points where we implicitly destroy self to
+    // clean-up that self var before exiting the scope. An explicit 'consume
+    // self' that is thrown away is a consume of this
     // mark_unresolved_non_copyable_value'd var and not a destroy of it,
     // according to the use classifier.
     if (isDiscardingContext) {
@@ -3371,8 +3381,8 @@ void MoveOnlyAddressCheckerPImpl::rewriteUses(
         continue;
 
       auto *dropDeinit = addressUseState.dropDeinitInsts.front();
-      diagnosticEmitter.emitMissingConsumeInDiscardingContext(destroyPair.first,
-                                                              dropDeinit);
+      diagnosticEmitter.emitMissingConsumeInDiscardingContext(
+          destroyPair.first, dropDeinit);
     }
   }
 

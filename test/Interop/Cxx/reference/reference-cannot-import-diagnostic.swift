@@ -11,7 +11,15 @@ module Test {
 
 //--- Inputs/test.h
 
+struct X {
+  X();
+  X(const X&) = default;
+  X(X&&) = default;
+  ~X();
+};
+
 void acceptRValueRef(int &&);
+void acceptRValueRef(X &&);
 
 template<class T>
 void notStdMove(T &&);
@@ -20,11 +28,12 @@ void notStdMove(T &&);
 
 import Test
 
-public func test() {
-  var x: CInt = 2
-  acceptRValueRef(consuming: x)
+public func foo(_ x: consuming X) {}
 
-  notStdMove(x) // expected-error {{cannot find 'notStdMove' in scope}}
-  // CHECK: note: function 'notStdMove' unavailable (cannot import)
-  // CHECK: note: C++ functions with rvalue reference parameters are unavailable in Swift
+public func test() {
+  let x = X()
+  acceptRValueRef(consuming: x)
+  let y = X()
+  foo(y)
+  let z = X()
 }
