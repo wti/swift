@@ -1764,6 +1764,18 @@ SubscriptDecl *SwiftDeclSynthesizer::makeSubscript(FuncDecl *getter,
   return subscript;
 }
 
+static bool isSelfDependent(FuncDecl* f) {
+  if (auto deps = f->getLifetimeDependencies()) {
+    if (deps->size() == 1) {
+      auto dependence = (*deps)[0];
+      if (!dependence.hasInheritLifetimeParamIndices() &&
+           dependence.hasScopeLifetimeParamIndices() && dependence.getTargetIndex() == 1)
+        return dependence.getScopeIndices()->contains(0);
+    }
+  }
+  return false;
+}
+
 // MARK: C++ dereference operator
 
 VarDecl *
@@ -1775,6 +1787,7 @@ SwiftDeclSynthesizer::makeDereferencedPointeeProperty(FuncDecl *getter,
   FuncDecl *getterImpl = getter ? getter : setter;
   FuncDecl *setterImpl = setter;
   auto dc = getterImpl->getDeclContext();
+  bool resultDependsOnSelf = isSelfDependent(getterImpl);
 
   // Get the return type wrapped in `Unsafe(Mutable)Pointer<T>`.
   const auto rawElementTy = getterImpl->getResultInterfaceType();
@@ -1785,9 +1798,9 @@ SwiftDeclSynthesizer::makeDereferencedPointeeProperty(FuncDecl *getter,
   // Use 'address' or 'mutableAddress' accessors for non-copyable
   // types that are returned indirectly.
   bool isNoncopyable = dc->mapTypeIntoContext(elementTy)->isNoncopyable();
-  bool isImplicit = !isNoncopyable;
+  bool isImplicit = !(isNoncopyable || resultDependsOnSelf);
   bool useAddress =
-      rawElementTy->getAnyPointerElementType() && isNoncopyable;
+      rawElementTy->getAnyPointerElementType() && (isNoncopyable || resultDependsOnSelf);
 
   auto result = new (ctx)
       VarDecl(/*isStatic*/ false, VarDecl::Introducer::Var,

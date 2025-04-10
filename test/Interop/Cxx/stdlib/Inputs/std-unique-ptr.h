@@ -55,4 +55,19 @@ std::unique_ptr<HasDtor> makeDtor() {
   return std::make_unique<HasDtor>();
 }
 
+static int copies = 0;
+
+struct CountCopies {
+  CountCopies() = default;
+  CountCopies(const CountCopies& other) { ++copies; }
+  ~CountCopies() {}
+
+  int getCopies() const { return copies; }
+  void method() {}
+  void constMethod() const {}
+  int field = 42;
+};
+
+inline std::unique_ptr<CountCopies> getCopyCountedUniquePtr() { return std::make_unique<CountCopies>(); }
+
 #endif // TEST_INTEROP_CXX_STDLIB_INPUTS_STD_UNIQUE_PTR_H
