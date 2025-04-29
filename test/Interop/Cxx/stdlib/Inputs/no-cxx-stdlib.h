@@ -3,3 +3,7 @@
 inline int my_sum(int a, int b) {
   return a + b;
 }
+
+struct Foo {
+  int a;
+};
