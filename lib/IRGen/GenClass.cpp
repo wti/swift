@@ -2052,7 +2052,6 @@ namespace {
 
         // Otherwise, we should have a normal stored property.
         auto ivar = field.getVarDecl();
-
         // If the field offset is fixed relative to the start of the superclass,
         // reference the global from the ivar metadata so that the Objective-C
         // runtime will slide it down.
