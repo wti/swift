@@ -1043,7 +1043,7 @@ namespace {
           }
         }
 
-        return {canonicalName, std::nullopt};
+        return {canonicalName, std::nullopt}; // DEBUG return here
       }
 
       // Special handling when we import using the alternate Swift name.
@@ -4392,6 +4392,11 @@ namespace {
             // Create a thunk that will perform dynamic dispatch.
             // TODO: we don't have to import the actual `method` in this case,
             // we can just synthesize a thunk and import that instead.
+            ImportedName importedName;
+            std::optional<ImportedName> correctSwiftName;
+            std::tie(importedName, correctSwiftName) = importFullName(decl);
+            if (!importedName)
+              return nullptr;
             auto result = synthesizer.makeVirtualMethod(decl);
             if (result) {
               return result;

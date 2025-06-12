@@ -53,3 +53,8 @@ module CircularInheritance {
   header "circular-inheritance.h"
   requires cplusplus
 }
+
+module RenameFunctions {
+  header "rename-functions.h"
+  requires cplusplus
+}

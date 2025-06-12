@@ -36,6 +36,7 @@
 #include "swift/Strings.h"
 #include "swift/Subsystems.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/Mangle.h"
 #include "clang/Basic/IdentifierTable.h"
@@ -614,9 +615,20 @@ checkVersionedSwiftName(VersionedSwiftNameInfo info,
 
 static std::optional<AnySwiftNameAttr>
 findSwiftNameAttr(const clang::Decl *decl, ImportNameVersion version) {
+
+  if (auto *namedDecl = dyn_cast<clang::NamedDecl>(decl)) {
+    if (namedDecl->getNameAsString() == "virtualFun" ||
+        namedDecl->getNameAsString() == "swiftVirtualFun" ||
+        namedDecl->getNameAsString() == "nonVirtualFun" ||
+        namedDecl->getNameAsString() == "swiftNonVirtualFun") {
+      llvm::errs() << "[findSwiftNameAttr] " << namedDecl->getNameAsString()
+                   << "\n";
+    }
+  }
+
 #ifndef NDEBUG
   if (std::optional<const clang::Decl *> def =
-          getDefinitionForClangTypeDecl(decl)) {
+          getDefinitionForClangTypeDecl(decl)) { // DEBUG
     assert((*def == nullptr || *def == decl) &&
            "swift_name should only appear on the definition");
   }

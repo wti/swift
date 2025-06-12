@@ -54,6 +54,8 @@ struct Base {
     return i * 2;
   }
 
+  // DEBUG add test here
+
   int pure() const __attribute__((pure)) { return 123; }
 
   inline int sameMethodNameSameSignature() const {

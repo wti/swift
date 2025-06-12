@@ -2259,9 +2259,10 @@ SwiftDeclSynthesizer::makeOperator(FuncDecl *operatorMethod,
 }
 
 // MARK: C++ virtual methods
-
+// TODO do something about correctSwiftName
 FuncDecl *SwiftDeclSynthesizer::makeVirtualMethod(
-    const clang::CXXMethodDecl *clangMethodDecl) {
+    const clang::CXXMethodDecl
+        *clangMethodDecl) { // DEBUG should receive a name here
   auto clangDC = clangMethodDecl->getParent();
   auto &ctx = ImporterImpl.SwiftContext;
 
