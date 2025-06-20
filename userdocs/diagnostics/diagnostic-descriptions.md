@@ -35,4 +35,3 @@ presented specially within your IDE of choice. See below for the full list of th
 - <doc:string-interpolation-conformance>
 - <doc:temporary-pointers>
 - <doc:trailing-closure-matching>
-- <doc:implementation-only-deprecated>

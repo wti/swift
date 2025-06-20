@@ -29,9 +29,10 @@ Or upgrade all warnings except deprecated declaration to errors:
 
 - <doc:clang-declaration-import>
 - <doc:deprecated-declaration>
+- <doc:implementation-only-deprecated>
+- <doc:missing-module-on-known-paths>
 - <doc:preconcurrency-import>
 - <doc:strict-language-features>
 - <doc:strict-memory-safety>
 - <doc:unknown-warning-group>
 - <doc:availability-unrecognized-name>
-- <doc:missing-module-on-known-paths>
