@@ -10,6 +10,8 @@
 import configparser
 import os
 import unittest
+from collections import defaultdict
+from io import StringIO
 
 from build_swift import constants
 from build_swift import presets
@@ -156,6 +158,85 @@ class TestPresetParserMeta(type):
 
 
 class TestPresetParser(unittest.TestCase, metaclass=TestPresetParserMeta):
+
+    def test_write_resolved_presets(self):
+        """Write resolved presets to markdown file.
+        """
+        output_file = "/Volumes/beta/Users/wes/git/shh/temp/presets.md"
+        output = StringIO()
+        def out(text):
+           print(text, file=output)
+        parser = PresetParser()
+        parser.read_files(PRESET_FILES)
+        names = parser.preset_names
+        unique_values=defaultdict(int)
+        out("\n# Presets")
+        out(f"- from {PRESET_FILES}")
+        out("- injected variables")
+        vars = {
+          'build_subdir': 'my-build-dir',
+          'darwin_toolchain_bundle_identifier':'my-dwtc_identifier',
+          'darwin_toolchain_display_name':'my-dwtc_display_name',
+          'darwin_toolchain_display_name_short':'my-dwtc_display_name_short',
+          'darwin_toolchain_xctoolchain_name':'my-dwtc_name',
+          'darwin_toolchain_version':'my-dwtc_version',
+          'darwin_toolchain_alias':'my-dwtc_alias',
+          'darwin_toolchain_require_use_os_runtime':'my-dwtc_runtime',
+          'extra_swift_args':'my-extra_swift_args',
+          'installable_package':'my-installable_package',
+          'install_destdir': 'my-install-dir',
+          'install_prefix': 'my-install-prefix',
+          'install_symroot':'my-install_symroot',
+          'install_toolchain_dir': 'my-install_toolchain_dir',
+          'ndk_path':'my-ndk_path',
+          'swift_install_destdir': 'my-swift-install-dir',
+          'symbols_package': 'my-symbols_package',
+          'toolchain_path': 'my-toolchain-dir',
+        }
+        for (key, value) in vars.items():
+            out(f"    - {key}: {value}")
+
+        for name in names:
+           try:
+               preset = parser.get_preset(name, vars=vars)
+               out(f"\n## {name}")
+               for option in preset.options:
+                   key, value, *other = option
+                   unique_values[key] += 1
+                   #print(f"- type: {type(option)} option: {option}")
+                    # uple' object has no attribute 'value'
+                   if value is None: 
+                       out(f"- {key}")
+                   else:
+                       out(f"- {key}={value}")
+           except KeyError as ke:
+              out(f"## {name} key error\n- {ke}")
+           except Exception as e: # InterpolationError:
+              out(f"## {name} error\n- {e}")
+
+        # emit counts for each value
+        out("## Values found\n### Values by name")
+        sorted_keys = sorted(unique_values.keys())
+        count_keys = defaultdict(list)
+        for key in sorted_keys:
+            count = unique_values[key]
+            out(f"- {key}: {count}")
+            count_keys[count].append(key)
+        out("\n### Values by count")
+        counts_sorted = sorted(count_keys.keys(), reverse=True)
+        min = 999999
+        range_size = 20
+        for count in counts_sorted:
+            if count < min:
+              min = count - range_size
+              min = max(min, 1)
+              out(f"- {min}-{count}")
+            for key in count_keys[count]:
+                out(f"    - {key}")
+
+        # emit entire result to file
+        with open(output_file, "w") as f:
+            f.write(output.getvalue())
 
     def test_read_files(self):
         parser = PresetParser()
